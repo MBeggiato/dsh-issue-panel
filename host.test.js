@@ -2,9 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { apply } from './index.js';
-function fixture(admission) {
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+function fixture(admission, cwd = process.cwd()) {
  let route;
- const ctx={webServer:{register:r=>{route=r;}},connection:{admit:()=>admission},sessions:{get:()=>({})},workingDirectory:{get:()=>process.cwd()},credentials:{describeRecord:async()=>({configured:false})}};
+ const ctx={webServer:{register:r=>{route=r;}},connection:{admit:()=>admission},sessions:{get:()=>({})},workingDirectory:{get:()=>cwd},credentials:{describeRecord:async()=>({configured:false})}};
  apply(ctx);
  return async(input,headers={'content-type':'application/json'},method='POST')=>{
  const req=Readable.from([JSON.stringify(input)]);req.headers=headers;req.method=method;
@@ -21,6 +24,12 @@ test('route enforces method and JSON content type',async()=>{
 test('route exposes credential presence without values',async()=>{
  assert.deepEqual((await fixture({peer:{principal:{kind:'owner'}}})({action:'auth-status'})).body,{configured:false});
 });
-test('actual development workspace reports not-git without auth lookup',async()=>{
- const result=await fixture({peer:{principal:{kind:'owner'}}})({action:'list',sessionId:'test'});assert.equal(result.status,200);assert.deepEqual(result.body,{available:false,reason:'not-git'});
+test('non-git workspace reports unavailable without auth lookup',async()=>{
+ const cwd = await mkdtemp(join(tmpdir(), 'dsh-issues-test-'));
+ try {
+  const result=await fixture({peer:{principal:{kind:'owner'}}}, cwd)({action:'list',sessionId:'test'});assert.equal(result.status,200);assert.deepEqual(result.body,{available:false,reason:'not-git'});
+ } finally {
+  if (!cwd.startsWith(join(tmpdir(), 'dsh-issues-test-'))) throw new Error('Unexpected cleanup path');
+  await rm(cwd, { recursive:true });
+ }
 });
