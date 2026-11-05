@@ -1,0 +1,3 @@
+- insert:
+    - id: github-issues
+      name: '@local/dsh-issue-panel'

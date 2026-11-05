@@ -1,0 +1,11 @@
+{
+  "name": "@local/dsh-issue-panel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read workspace GitHub issues and stage issue context in chat.",
+  "type": "module",
+  "exports": { ".": "./index.js", "./client": "./client.js", "./locale/*.json": "./locale/*.json", "./icon": "./icon.svg" },
+  "files": ["index.js", "github.js", "client.js", "cordis.patch.yml", "locale/*.json", "icon.svg", "README.md"],
+  "scripts": { "test": "node --test", "check": "node --check index.js && node --check github.js && node --check client.js" },
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" }, "client": { "platform": "web", "immediately": true, "inject": ["@deepseek-ai/dsh-client-ui-conversation"] } }
+}
